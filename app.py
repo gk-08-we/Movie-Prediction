@@ -7,8 +7,12 @@ st.title('Movie Success Predictor')
 st.write("Classify movies as 'Hit', 'Average', or 'Flop' based on their IMDB scores.")
 
 # Load pre-trained model
-with open('movie_model.pkl', 'rb') as file:
-    model = pickle.load(file)
+try:
+    with open('movie_model.pkl', 'rb') as file:
+        model = pickle.load(file)
+except FileNotFoundError:
+    st.error("The model file 'movie_model.pkl' is missing. Please ensure it is in the correct directory.")
+    st.stop()
 
 def predict(imdb_score):
     # Categorize IMDB Scores into 'Hit', 'Average', or 'Flop'
@@ -58,3 +62,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
