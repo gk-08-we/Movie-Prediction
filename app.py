@@ -1,70 +1,60 @@
+import numpy as np
+import pickle
 import pandas as pd
+import streamlit as st
 
-try:
-    import streamlit as st
-except ModuleNotFoundError:
-    st.write("Streamlit is not installed in the current environment.")
-    raise ModuleNotFoundError("Streamlit is not installed. Please install it using 'pip install streamlit'.")
-
-from sklearn.preprocessing import LabelEncoder
-
-# Debugging output
-st.write("Initializing Streamlit application...")
-
-# Streamlit App
-st.title("Movie Success Predictor")
+st.title('Movie Success Predictor')
 st.write("Classify movies as 'Hit', 'Average', or 'Flop' based on their IMDB scores.")
 
-# Input Options
-option = st.selectbox("Choose an input method:", ("Manual Input", "Upload CSV"))
-st.write(f"Selected option: {option}")
+# Load pre-trained model
+with open('movie_model.pkl', 'rb') as file:
+    model = pickle.load(file)
 
-# Categorize IMDB Scores into 'Hit', 'Average', or 'Flop'
-def classify_movie(score):
-    st.write(f"Classifying score: {score}")
-    if score <= 3:
+def predict(imdb_score):
+    # Categorize IMDB Scores into 'Hit', 'Average', or 'Flop'
+    if imdb_score <= 3:
         return 'Flop'
-    elif 3 < score <= 6:
+    elif 3 < imdb_score <= 6:
         return 'Average'
     else:
         return 'Hit'
 
-if option == "Manual Input":
-    imdb_score = st.number_input("Enter IMDB Score:", min_value=0.0, max_value=10.0, step=0.1)
-    st.write(f"IMDB Score entered: {imdb_score}")
-    if st.button("Predict"):
-        category = classify_movie(imdb_score)
-        st.write(f"The movie is predicted to be: **{category}**")
+def main():
+    option = st.selectbox("Choose an input method:", ("Manual Input", "Upload CSV"))
 
-elif option == "Upload CSV":
-    uploaded_file = st.file_uploader("Upload your CSV file:", type="csv")
-    if uploaded_file is not None:
-        st.write("File uploaded successfully.")
-        try:
-            df = pd.read_csv(uploaded_file)
-            st.write("CSV file loaded into DataFrame.")
+    if option == "Manual Input":
+        imdb_score = st.number_input("Enter IMDB Score (1 to 10):", min_value=1.0, max_value=10.0, step=0.1)
+        if st.button("Predict"):
+            prediction = predict(imdb_score)
+            st.success(f"The movie is predicted to be: **{prediction}**")
 
-            # Check for 'imdb_score' column
-            if 'imdb_score' in df.columns:
-                st.write("Dataset Preview:")
-                st.dataframe(df.head())
+    elif option == "Upload CSV":
+        uploaded_file = st.file_uploader("Upload your CSV file (must contain 'imdb_score' column):", type="csv")
+        if uploaded_file is not None:
+            try:
+                df = pd.read_csv(uploaded_file)
+                if 'imdb_score' in df.columns:
+                    st.write("Dataset Preview:")
+                    st.dataframe(df.head())
 
-                # Apply classification
-                df['Classify'] = df['imdb_score'].apply(classify_movie)
+                    # Apply classification
+                    df['Prediction'] = df['imdb_score'].apply(predict)
 
-                st.write("Predicted Results:")
-                st.dataframe(df[['imdb_score', 'Classify']])
+                    st.write("Predicted Results:")
+                    st.dataframe(df[['imdb_score', 'Prediction']])
 
-                # Option to download results
-                csv = df.to_csv(index=False)
-                st.download_button(
-                    label="Download Results",
-                    data=csv,
-                    file_name="movie_predictions.csv",
-                    mime="text/csv",
-                )
-            else:
-                st.error("The uploaded CSV does not contain the 'imdb_score' column.")
-        except Exception as e:
-            st.error(f"An error occurred while processing the file: {e}")
-            st.write("Traceback:", e)
+                    # Option to download results
+                    csv = df.to_csv(index=False)
+                    st.download_button(
+                        label="Download Predictions",
+                        data=csv,
+                        file_name="movie_predictions.csv",
+                        mime="text/csv"
+                    )
+                else:
+                    st.error("The uploaded file does not contain the 'imdb_score' column.")
+            except Exception as e:
+                st.error(f"An error occurred while processing the file: {e}")
+
+if __name__ == '__main__':
+    main()
