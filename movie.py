@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify
 import numpy as np
 
 # Load the trained model and thresholds
-model = joblib.load('final_lightgbm_model.pkl')
+model = joblib.load('lightgbm_adjusted_model.pkl')
 adjusted_thresholds = joblib.load('lightgbm_thresholds.pkl')
 
 # Initialize Flask app
